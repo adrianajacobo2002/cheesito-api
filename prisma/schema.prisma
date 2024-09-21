@@ -15,7 +15,7 @@ datasource db {
 
 model Usuario {
   id_usuario Int      @id @default(autoincrement())
-  user       String
+  user       String @unique
   password   String
   rol        Rol
 }

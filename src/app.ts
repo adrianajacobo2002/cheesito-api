@@ -4,6 +4,7 @@ import usuarioRoutes from './routes/usuarioRoutes';
 import mesaRoutes from './routes/mesaRoutes';
 import cors from 'cors';
 import platilloRoutes from './routes/platilloRoutes';
+import inventarioRoutes from './routes/inventarioRoutes'
 
 const app = express();
 
@@ -27,6 +28,8 @@ app.use('/uploads', express.static('uploads'));
 
 // Registrar rutas
 app.use('/api', platilloRoutes);
+
+app.use('/api', inventarioRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

@@ -4,7 +4,7 @@ import usuarioRoutes from './routes/usuarioRoutes';
 import mesaRoutes from './routes/mesaRoutes';
 import cors from 'cors';
 import platilloRoutes from './routes/platilloRoutes';
-
+import cors from 'cors';
 const app = express();
 
 app.use(cors({

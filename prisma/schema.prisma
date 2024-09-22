@@ -102,6 +102,7 @@ model Platillo {
   tipo         TipoPlatillo
   detalles     DetalleOrden[]
   inventario   Inventario[]
+  image_url      String
 }
 
 enum TipoPlatillo {

@@ -1,17 +1,21 @@
-import express, { Application, Request, Response } from 'express';
+import express from 'express';
+import authRoutes from './routes/authRoutes';
+import usuarioRoutes from './routes/usuarioRoutes';
+import mesaRoutes from './routes/mesaRoutes';
 
-const app: Application = express();
-const PORT = 3000;
+const app = express();
 
-// Middleware para manejar JSON
 app.use(express.json());
 
-// Ruta básica
-app.get('/', (req: Request, res: Response) => {
-  res.send('¡Hola, Express con TypeScript!');
-});
+// Rutas públicas
+app.use('/api/auth', authRoutes); // Rutas de autenticación
 
-// Iniciar el servidor
+// Rutas protegidas
+app.use('/api', usuarioRoutes); // Rutas que requieren autenticación
+
+app.use('/api', mesaRoutes);
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
 });

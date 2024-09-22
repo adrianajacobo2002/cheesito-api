@@ -40,7 +40,8 @@ export default class PlatilloController {
     }
 
     try {
-      const nuevoPlatillo = await Platillo.createPlatillo(nombre, parseFloat(precio), tipo as TipoPlatillo, file.filename); // Guardamos el nombre del archivo en image_url
+      // Crear el platillo y agregarlo automáticamente al inventario con cantidad 0
+      const nuevoPlatillo = await Platillo.createPlatillo(nombre, parseFloat(precio), tipo as TipoPlatillo, file.filename);
       res.status(201).json(nuevoPlatillo);
     } catch (error) {
       res.status(500).json({ message: 'Error al crear el platillo', error });
@@ -68,28 +69,43 @@ export default class PlatilloController {
     }
   }
 
-  // Eliminar un platillo
+  
   static async delete(req: Request, res: Response) {
     const { id } = req.params;
+    
     try {
-        const platillo = await Platillo.getPlatilloById(Number(id));
-        if (platillo) {
-          const filePath = path.join(__dirname, '../uploads', platillo.image_url);
-  
-          // Verificar si el archivo existe antes de intentar eliminarlo
-          if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath); // Elimina la imagen del servidor
-          } else {
-            console.log("El archivo no existe, no se puede eliminar.");
-          }
-  
-          await Platillo.deletePlatillo(Number(id));
-          res.status(200).json({ message: 'Platillo eliminado correctamente' });
-        } else {
-          res.status(404).json({ message: 'Platillo no encontrado' });
-        }
-      } catch (error) {
-        res.status(500).json({ message: 'Error al eliminar el platillo', error });
+      // Obtener el platillo por su ID
+      const platillo = await Platillo.getPlatilloById(Number(id));
+      
+      if (!platillo) {
+        return res.status(404).json({ message: 'Platillo no encontrado' });
       }
+      
+      // Verificar el inventario asociado al platillo
+      const inventario = await Platillo.getInventarioByPlatilloId(Number(id)); // Añadimos este método para obtener el inventario
+
+      // Validar que la cantidad en inventario sea 0
+      if (inventario && inventario.cantidad_disponible > 0) {
+        return res.status(400).json({
+          message: 'No se puede eliminar el platillo, aún hay productos disponibles en el inventario.'
+        });
+      }
+
+      // Eliminar la imagen del servidor si existe
+      const filePath = path.join(__dirname, '../uploads', platillo.image_url);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath); // Elimina la imagen del servidor
+      } else {
+        console.log("El archivo no existe, no se puede eliminar.");
+      }
+
+      // Eliminar el platillo y su registro en inventario
+      await Platillo.deletePlatillo(Number(id));
+      
+      res.status(200).json({ message: 'Platillo y su inventario eliminados correctamente' });
+    } catch (error) {
+      res.status(500).json({ message: 'Error al eliminar el platillo', error });
+    }
   }
+
 }

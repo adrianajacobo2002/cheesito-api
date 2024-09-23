@@ -50,14 +50,19 @@ export default class InventarioController {
     }
 
     static async updateCantidad(req: Request, res: Response) {
-        const { id } = req.params;
-        const { cantidad } = req.body;
-        try {
-          const productoActualizado = await Inventario.updateCantidad(Number(id), cantidad);
+      const { id } = req.params;
+      const { cantidad } = req.body;
+      try {
+          const productoActual = await Inventario.findProductoById(Number(id));
+          if (!productoActual) {
+              return res.status(404).json({ message: "Producto no encontrado" });
+          }
+          const nuevaCantidad = productoActual.cantidad_disponible + cantidad;
+          const productoActualizado = await Inventario.updateCantidad(Number(id), nuevaCantidad);
           res.status(200).json(productoActualizado);
-        } catch (error) {
+      } catch (error) {
           res.status(500).json({ message: 'Error al actualizar la cantidad de producto', error });
-        }
+      }
     }
 
     static async deleteProducto(req: Request, res: Response) {

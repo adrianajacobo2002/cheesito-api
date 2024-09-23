@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import Factura from '../models/Factura';
 import { PrismaClient } from '@prisma/client';
+import { EstadoOrden, EstadoMesa } from "@prisma/client";
+import Orden from "../models/Orden";
+import Mesa from "../models/Mesa";
 
 const prisma = new PrismaClient();
 
@@ -37,6 +40,12 @@ export default class FacturaController {
 
       // Crear la factura
       const nuevaFactura = await Factura.createFactura(orden.id_orden, subtotal, propina, total);
+
+      // Actualizar el estado de la orden a CANCELADO
+      await Orden.updateEstadoOrden(orden.id_orden, EstadoOrden.CANCELADO);
+
+      // Actualizar el estado de la mesa a DISPONIBLE
+      await Mesa.updateTable(orden.mesa_id, { estado: EstadoMesa.DISPONIBLE });
 
       res.status(201).json(nuevaFactura);
     } catch (error) {

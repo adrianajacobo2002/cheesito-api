@@ -60,6 +60,12 @@ export default class Inventario{
         });
     }
 
+    static async findProductoById(id: number) {
+        return await prisma.inventario.findUnique({
+            where: { id_inventario: id },
+        });
+    }
+
     static async addProducto(platillo_id: number, cantidad: number){
         return await prisma.inventario.create({
 

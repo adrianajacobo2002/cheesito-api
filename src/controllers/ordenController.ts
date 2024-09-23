@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import Orden from '../models/Orden';
 import Inventario from '../models/Inventario';
 import Mesa from "../models/Mesa";
-import { EstadoMesa } from "@prisma/client";
+import { EstadoMesa, EstadoOrden } from "@prisma/client";
 
 export default class OrdenController {
   // Crear una nueva orden
@@ -58,6 +58,16 @@ export default class OrdenController {
       }
     } catch (error) {
       res.status(500).json({ message: 'Error al obtener la orden', error });
+    }
+  }
+
+  static async getOrdenesPorPagar(req: Request, res: Response) {
+    try {
+      // Buscar órdenes con estado POR_PAGAR
+      const ordenes = await Orden.getOrdenesByEstado(EstadoOrden.POR_PAGAR);
+      res.status(200).json(ordenes);
+    } catch (error) {
+      res.status(500).json({ message: 'Error al obtener las órdenes por pagar', error });
     }
   }
 

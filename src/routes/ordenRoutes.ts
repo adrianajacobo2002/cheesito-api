@@ -12,6 +12,9 @@ router.get('/ordenes', OrdenController.getAll);
 // Obtener detalles de una orden específica
 router.get('/ordenes/:id', OrdenController.getById);
 
+// Ruta para obtener órdenes con estado POR_PAGAR
+router.get('/ordenes/por-pagar', OrdenController.getOrdenesPorPagar);
+
 // Agregar platillos a la orden
 router.post('/ordenes/:id/platillos', OrdenController.addPlatillos);
 

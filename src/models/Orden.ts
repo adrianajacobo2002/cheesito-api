@@ -41,6 +41,17 @@ export default class Orden {
     });
   }
 
+  static async getOrdenesByEstado(estado: EstadoOrden) {
+    return await prisma.orden.findMany({
+      where: { estado: estado },
+      include: {
+        detalleOrden: true,
+        mesa: true,
+        mesero: true,
+      },
+    });
+  }
+
   // Agregar platillos a una orden (crear registros en DetalleOrden)
   static async addPlatillosToOrden(orden_id: number, detalles: { platillo_id: number, cantidad: number }[]) {
     const detallesData = await Promise.all(

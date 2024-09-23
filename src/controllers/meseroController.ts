@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import Mesero from '../models/mesero';
+import Mesero from '../models/Mesero';
 
 export default class MeseroController {
   // Crear un nuevo mesero

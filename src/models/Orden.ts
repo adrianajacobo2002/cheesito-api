@@ -44,33 +44,62 @@ export default class Orden {
   // Agregar platillos a una orden (crear registros en DetalleOrden)
   static async addPlatillosToOrden(orden_id: number, detalles: { platillo_id: number, cantidad: number }[]) {
     const detallesData = await Promise.all(
-      detalles.map(async (detalle) => {
-        // Obtener el precio del platillo desde la base de datos
-        const platillo = await prisma.platillo.findUnique({
-          where: { id_platillos: detalle.platillo_id },
-        });
+        detalles.map(async (detalle) => {
+            // Buscar si ya existe un detalle de la orden con el mismo platillo
+            const detalleExistente = await prisma.detalleOrden.findFirst({
+                where: {
+                    orden_id: orden_id,
+                    platillo_id: detalle.platillo_id,
+                },
+            });
 
-        if (!platillo) {
-          throw new Error(`Platillo con ID ${detalle.platillo_id} no encontrado`);
-        }
+            // Obtener el precio del platillo desde la base de datos
+            const platillo = await prisma.platillo.findUnique({
+                where: { id_platillos: detalle.platillo_id },
+            });
 
-        // Calcular el subtotal como cantidad * precio del platillo
-        const subtotal = detalle.cantidad * platillo.precio;
+            if (!platillo) {
+                throw new Error(`Platillo con ID ${detalle.platillo_id} no encontrado`);
+            }
 
-        return {
-          orden_id,
-          platillo_id: detalle.platillo_id,
-          cantidad: detalle.cantidad,
-          subtotal: subtotal, // Subtotal calculado
-          estado: EstadoDetalleOrden.EN_PREPARACION, // Estado inicial al agregar el platillo
-        };
-      })
+            // Si el detalle ya existe, sumar la cantidad y actualizar el subtotal
+            if (detalleExistente) {
+                const nuevaCantidad = detalleExistente.cantidad + detalle.cantidad;
+                const nuevoSubtotal = nuevaCantidad * platillo.precio;
+
+                // Actualizar el detalle de la orden existente
+                await prisma.detalleOrden.update({
+                    where: { id_detalle_orden: detalleExistente.id_detalle_orden },
+                    data: {
+                        cantidad: nuevaCantidad,
+                        subtotal: nuevoSubtotal,
+                    },
+                });
+
+                return {
+                    platillo_id: detalle.platillo_id,
+                    cantidad: nuevaCantidad,
+                    subtotal: nuevoSubtotal,
+                };
+            } else {
+                // Si no existe, agregar un nuevo detalle de orden
+                const subtotal = detalle.cantidad * platillo.precio;
+
+                return await prisma.detalleOrden.create({
+                    data: {
+                        orden_id: orden_id,
+                        platillo_id: detalle.platillo_id,
+                        cantidad: detalle.cantidad,
+                        subtotal: subtotal,
+                        estado: EstadoDetalleOrden.EN_PREPARACION,
+                    },
+                });
+            }
+        })
     );
 
-    return await prisma.detalleOrden.createMany({
-      data: detallesData,
-    });
-  }
+    return detallesData;
+}
 
   // Eliminar un registro de detalle_orden
   static async deleteDetalleOrden(id_detalle_orden: number) {

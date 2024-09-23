@@ -26,6 +26,8 @@ export default class Mesa{
     }
 
     static async updateTable(id: number, data: Partial<{ estado: EstadoMesa }>) {
+      console.log('ID de la mesa a actualizar:', id);
+      console.log('Datos de actualización:', data);
         return await prisma.mesa.update({
           where: { id_mesa: id },
           data,

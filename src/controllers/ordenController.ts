@@ -1,18 +1,39 @@
 import { Request, Response } from 'express';
 import Orden from '../models/Orden';
+import Inventario from '../models/Inventario';
+import Mesa from "../models/Mesa";
+import { EstadoMesa } from "@prisma/client";
 
 export default class OrdenController {
   // Crear una nueva orden
   static async create(req: Request, res: Response) {
     const { nombre_cliente, mesero_id, mesa_id } = req.body;
-
+    
     try {
+      // Verificar el estado de la mesa antes de crear la orden
+      const mesa = await Mesa.getTableById(Number(mesa_id));
+      if (!mesa) {
+        return res.status(404).json({ message: 'Mesa no encontrada' });
+      }
+  
+      // Verificar si la mesa está ocupada
+      if (mesa.estado === EstadoMesa.OCUPADO) {
+        return res.status(400).json({ message: 'No se puede crear una orden en una mesa ocupada' });
+      }
+  
+      // Crear la nueva orden
       const nuevaOrden = await Orden.createOrden({ nombre_cliente, mesero_id, mesa_id });
+  
+      // Cambiar el estado de la mesa a OCUPADO
+      await Mesa.updateTable(Number(mesa_id), { estado: EstadoMesa.OCUPADO });
+  
       res.status(201).json(nuevaOrden);
     } catch (error) {
+      console.error('Error al crear la orden y actualizar la mesa:', error);
       res.status(500).json({ message: 'Error al crear la orden', error });
     }
   }
+  
 
   // Obtener todas las órdenes
   static async getAll(req: Request, res: Response) {
@@ -46,12 +67,27 @@ export default class OrdenController {
     const { detalles } = req.body;  // Array de detalles { platillo_id, cantidad }
 
     try {
-      const nuevosDetalles = await Orden.addPlatillosToOrden(Number(id), detalles);
-      res.status(201).json(nuevosDetalles);
+        // Iteramos sobre los detalles para agregar los platillos a la orden y restar del inventario
+        for (const detalle of detalles) {
+            const productoActual = await Inventario.findProductoById(detalle.platillo_id);
+            
+            if (!productoActual || productoActual.cantidad_disponible < detalle.cantidad) {
+                return res.status(400).json({ message: `No hay suficiente stock del platillo con ID ${detalle.platillo_id}` });
+            }
+
+            // Restar la cantidad del inventario
+            const nuevaCantidad = productoActual.cantidad_disponible - detalle.cantidad;
+            await Inventario.updateCantidad(detalle.platillo_id, nuevaCantidad);
+        }
+
+        // Verificar y agregar platillos a la orden
+        const nuevosDetalles = await Orden.addPlatillosToOrden(Number(id), detalles);
+        res.status(201).json(nuevosDetalles);
     } catch (error) {
-      res.status(500).json({ message: 'Error al agregar platillos a la orden', error });
+        res.status(500).json({ message: 'Error al agregar platillos a la orden', error });
     }
-  }
+}
+
 
   // Cambiar el estado de un platillo en una orden
   static async updateEstadoPlatillo(req: Request, res: Response) {

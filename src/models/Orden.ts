@@ -41,6 +41,15 @@ export default class Orden {
     });
   }
 
+  static async getOrdenByMesaId(mesa_id: number) {
+    return await prisma.orden.findFirst({
+      where: {
+        mesa_id: mesa_id,
+        estado: { not: 'CANCELADO' }, // Solo obtener órdenes que no estén canceladas
+      },
+    });
+  }
+
   static async getOrdenesByEstado(estado: EstadoOrden) {
     return await prisma.orden.findMany({
       where: { estado: estado },

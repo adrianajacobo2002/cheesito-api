@@ -1,17 +1,40 @@
 import { Request, Response } from "express";
 import { EstadoMesa } from '@prisma/client';
 import Mesa from "../models/Mesa"
+import Orden from "../models/Orden";
 
 export default class mesaController{
 
-    static async getAll(req: Request, res: Response) {
-        try {
-          const mesas = await Mesa.getAllTables();
-          res.status(200).json(mesas);
-        } catch (error) {
-          res.status(500).json({ message: 'Error al obtener las mesas' });
-        }
+  static async getAll(req: Request, res: Response) {
+    try {
+      // Obtener todas las mesas
+      const mesas = await Mesa.getAllTables();
+
+      // Para cada mesa, verificar si tiene una orden activa (estado OCUPADO)
+      const mesasConOrdenes = await Promise.all(
+        mesas.map(async (mesa) => {
+          if (mesa.estado === "OCUPADO") {
+            // Buscar la orden asociada a la mesa que no esté cancelada
+            const orden = await Orden.getOrdenByMesaId(mesa.id_mesa);
+
+            // Si hay una orden activa, agregar el nombre del cliente y el estado
+            return {
+              ...mesa,
+              orden: orden
+                ? { nombre_cliente: orden.nombre_cliente, estado: orden.estado }
+                : null,
+            };
+          } else {
+            return { ...mesa, orden: null }; // Si no está ocupada, no tiene orden
+          }
+        })
+      );
+
+      res.status(200).json(mesasConOrdenes);
+    } catch (error) {
+      res.status(500).json({ message: "Error al obtener las mesas", error });
     }
+  }
 
     static async getById(req: Request, res: Response) {
         const { id } = req.params;

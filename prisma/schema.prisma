@@ -14,7 +14,7 @@ datasource db {
 }
 
 model Usuario {
-  id_usuario Int      @id @default(autoincrement())
+  id_usuario Int    @id @default(autoincrement())
   user       String @unique
   password   String
   rol        Rol
@@ -27,11 +27,11 @@ enum Rol {
 }
 
 model Mesa {
-  id_mesa    Int     @id @default(autoincrement())
-  num_mesa   Int
-  estado     EstadoMesa
-  capacidad  Int
-  ordenes    Orden[]
+  id_mesa   Int        @id @default(autoincrement())
+  num_mesa  Int
+  estado    EstadoMesa
+  capacidad Int
+  ordenes   Orden[]
 }
 
 enum EstadoMesa {
@@ -40,16 +40,16 @@ enum EstadoMesa {
 }
 
 model Orden {
-  id_orden      Int           @id @default(autoincrement())
-  fecha         DateTime
-  estado        EstadoOrden
+  id_orden       Int            @id @default(autoincrement())
+  fecha          DateTime       @default(now())
+  estado         EstadoOrden    @default(POR_PAGAR)
   nombre_cliente String
-  mesero        Mesero        @relation(fields: [mesero_id], references: [id_mesero])
-  mesero_id     Int
-  mesa          Mesa          @relation(fields: [mesa_id], references: [id_mesa])
-  mesa_id       Int
-  detalleOrden  DetalleOrden[]
-  factura       Factura?
+  mesero         Mesero         @relation(fields: [mesero_id], references: [id_mesero])
+  mesero_id      Int
+  mesa           Mesa           @relation(fields: [mesa_id], references: [id_mesa])
+  mesa_id        Int
+  detalleOrden   DetalleOrden[]
+  factura        Factura?
 }
 
 enum EstadoOrden {
@@ -64,14 +64,14 @@ model Mesero {
 }
 
 model DetalleOrden {
-  id_detalle_orden Int           @id @default(autoincrement())
-  orden           Orden          @relation(fields: [orden_id], references: [id_orden])
-  orden_id        Int
-  platillo        Platillo       @relation(fields: [platillo_id], references: [id_platillos])
-  platillo_id     Int
-  cantidad        Int
-  subtotal        Float
-  estado          EstadoDetalleOrden
+  id_detalle_orden Int                @id @default(autoincrement())
+  orden            Orden              @relation(fields: [orden_id], references: [id_orden])
+  orden_id         Int
+  platillo         Platillo           @relation(fields: [platillo_id], references: [id_platillos])
+  platillo_id      Int
+  cantidad         Int
+  subtotal         Float
+  estado           EstadoDetalleOrden
 }
 
 enum EstadoDetalleOrden {
@@ -80,29 +80,29 @@ enum EstadoDetalleOrden {
 }
 
 model Factura {
-  id_factura Int     @id @default(autoincrement())
-  orden      Orden   @relation(fields: [orden_id], references: [id_orden])
-  orden_id   Int @unique
+  id_factura Int   @id @default(autoincrement())
+  orden      Orden @relation(fields: [orden_id], references: [id_orden])
+  orden_id   Int   @unique
   subtotal   Float
   propina    Float
   total      Float
 }
 
 model Inventario {
-  id_inventario     Int     @id @default(autoincrement())
-  platillo          Platillo @relation(fields: [platillo_id], references: [id_platillos])
-  platillo_id       Int
+  id_inventario       Int      @id @default(autoincrement())
+  platillo            Platillo @relation(fields: [platillo_id], references: [id_platillos])
+  platillo_id         Int
   cantidad_disponible Int
 }
 
 model Platillo {
-  id_platillos Int     @id @default(autoincrement())
+  id_platillos Int            @id @default(autoincrement())
   nombre       String
   precio       Float
   tipo         TipoPlatillo
   detalles     DetalleOrden[]
   inventario   Inventario[]
-  image_url      String
+  image_url    String
 }
 
 enum TipoPlatillo {

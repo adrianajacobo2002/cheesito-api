@@ -3,6 +3,7 @@ import Orden from '../models/Orden';
 import Inventario from '../models/Inventario';
 import Mesa from "../models/Mesa";
 import { EstadoMesa, EstadoOrden } from "@prisma/client";
+import prisma from '../../prisma';
 
 export default class OrdenController {
   // Crear una nueva orden
@@ -35,16 +36,30 @@ export default class OrdenController {
   }
   
 
-  // Obtener todas las órdenes
   static async getAll(req: Request, res: Response) {
     try {
-      const ordenes = await Orden.getAllOrdenes();
+      const ordenes = await prisma.orden.findMany({
+        include: {
+          detalleOrden: {
+            include: {
+              platillo: {
+                select: {
+                  nombre: true,  // Asegúrate de traer el nombre del platillo
+                },
+              },
+            },
+          },
+          mesa: true,  // Incluye la relación con la mesa
+          mesero: true  // Incluye la relación con el mesero
+        },
+      });
+  
       res.status(200).json(ordenes);
     } catch (error) {
       res.status(500).json({ message: 'Error al obtener las órdenes', error });
     }
-  }
-
+  }  
+  
   // Obtener los detalles de una orden específica
   static async getById(req: Request, res: Response) {
     const { id } = req.params;

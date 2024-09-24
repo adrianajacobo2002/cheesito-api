@@ -121,12 +121,20 @@ export default class Orden {
     return detallesData;
 }
 
-  // Eliminar un registro de detalle_orden
-  static async deleteDetalleOrden(id_detalle_orden: number) {
-    return await prisma.detalleOrden.delete({
-      where: { id_detalle_orden },
-    });
-  }
+static async getDetalleById(id_detalle_orden: number) {
+  return prisma.detalleOrden.findUnique({
+    where: { id_detalle_orden },
+    include: {
+      platillo: true,  // Incluimos la relación con el platillo para obtener el platillo_id
+    },
+  });
+}
+
+static async deleteDetalleOrden(id_detalle_orden: number) {
+  return prisma.detalleOrden.delete({
+    where: { id_detalle_orden },
+  });
+}
 
   // Eliminar una orden
   static async deleteOrden(id: number) {

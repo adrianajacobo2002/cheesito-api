@@ -60,12 +60,31 @@ export default class OrdenController {
     }
   }  
   
-  // Obtener los detalles de una orden específica
+  // Obtener los detalles de una orden específica incluyendo información del platillo
   static async getById(req: Request, res: Response) {
     const { id } = req.params;
 
     try {
-      const orden = await Orden.getOrdenById(Number(id));
+      const orden = await prisma.orden.findUnique({
+        where: { 
+          id_orden: Number(id) // Asegúrate de usar el nombre correcto del campo
+        },
+        include: {
+          detalleOrden: {
+            include: {
+              platillo: {
+                // Incluimos el platillo relacionado
+                select: {
+                  nombre: true,
+                  precio: true,
+                  image_url: true, // Suponiendo que guardas la URL de la imagen en 'image_url'
+                },
+              },
+            },
+          },
+        },
+      });
+
       if (orden) {
         res.status(200).json(orden);
       } else {
@@ -127,21 +146,42 @@ export default class OrdenController {
     }
   }
 
+  // Función para eliminar un detalle de la orden y actualizar el inventario
   static async deleteDetalleOrden(req: Request, res: Response) {
     const { id_detalle_orden } = req.params;
 
     try {
+      // Obtener el detalle de la orden antes de eliminarlo
+      const detalle = await Orden.getDetalleById(Number(id_detalle_orden));
+
+      if (!detalle) {
+        return res.status(404).json({ message: 'Detalle de orden no encontrado' });
+      }
+
+      // Sumar la cantidad eliminada al inventario correspondiente
+      const producto = await Inventario.findProductoById(detalle.platillo_id);
+
+      if (!producto) {
+        return res.status(404).json({ message: 'Producto no encontrado en el inventario' });
+      }
+
+      // Actualizamos el stock sumando la cantidad eliminada
+      const nuevaCantidad = producto.cantidad_disponible + detalle.cantidad;
+      await Inventario.updateCantidad(detalle.platillo_id, nuevaCantidad);
+
+      // Ahora eliminamos el detalle de la orden
       const detalleEliminado = await Orden.deleteDetalleOrden(Number(id_detalle_orden));
 
       if (detalleEliminado) {
-        res.status(200).json({ message: 'Detalle de orden eliminado correctamente' });
+        res.status(200).json({ message: 'Detalle de orden eliminado y stock actualizado correctamente' });
       } else {
-        res.status(404).json({ message: 'Detalle de orden no encontrado' });
+        res.status(404).json({ message: 'No se pudo eliminar el detalle de la orden' });
       }
     } catch (error) {
       res.status(500).json({ message: 'Error al eliminar el detalle de la orden', error });
     }
   }
+
 
   // Eliminar una orden
   static async delete(req: Request, res: Response) {
